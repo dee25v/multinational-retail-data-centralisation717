@@ -3,3 +3,49 @@ RDS_PASSWORD: AiCore2022
 RDS_USER: aicore_admin
 RDS_DATABASE: postgres
 RDS_PORT: 5432
+
+import psycopg2
+import yaml
+
+class DatabaseConnector:
+    def __init__(self, creds_file='db_creds.yaml'):
+        self.creds = self.load_credentials(creds_file)
+        self.connection = self.connect_to_db()
+
+    def load_credentials(self, creds_file):
+        with open(creds_file, 'r') as file:
+            return yaml.safe_load(file)
+
+    def connect_to_db(self):
+        creds = self.creds
+        try:
+            connection = psycopg2.connect(
+                host=creds['RDS_HOST'],
+                database=creds['RDS_DATABASE'],
+                user=creds['RDS_USER'],
+                password=creds['RDS_PASSWORD'],
+                port=creds['RDS_PORT']
+            )
+            print("Connection to database established successfully.")
+            return connection
+        except Exception as error:
+            print(f"Error connecting to database: {error}")
+            return None
+
+    def extract_data(self, query):
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(query)
+            data = cursor.fetchall()
+            cursor.close()
+            return data
+        except Exception as error:
+            print(f"Error executing query: {error}")
+            return None
+
+# Example usage
+if __name__ == "__main__":
+    db_connector = DatabaseConnector()
+    query = "SELECT * FROM your_table;"  # Replace 'your_table' with your actual table name
+    data = db_connector.extract_data(query)
+    print(data)
