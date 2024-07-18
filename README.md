@@ -37,9 +37,7 @@ This project is designed to centralize sales data for a multinational retail com
 ### Steps:
 1. **Clone the Repository**:
     ```bash
-    git clone https://github.com/yourusername/multinational-retail-data-centralisation.git
-    cd multinational-retail-data-centralisation
-    ```
+    git clone [https://github.com/dee25v/multinational-retail-data-centralisation717.git]    ```
 
 2. **Set Up Virtual Environment** (optional but recommended):
     ```bash
