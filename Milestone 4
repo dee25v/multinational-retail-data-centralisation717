@@ -1,0 +1,304 @@
+# Task 1: How Many Stores Does the Business Have and in Which Countries?
+
+-- Query to get the total number of stores by country
+SELECT country_code AS country, COUNT(*) AS total_no_stores
+FROM dim_store_details
+GROUP BY country_code
+ORDER BY total_no_stores DESC;
+
+# Task 2: Which Locations Currently Have the Most Stores?
+
+-- Query to get the total number of stores by locality
+SELECT locality, COUNT(*) AS total_no_stores
+FROM dim_store_details
+GROUP BY locality
+ORDER BY total_no_stores DESC
+LIMIT 10;
+
+# Task 3: Which Months Produced the Largest Amount of Sales?
+
+-- Query to get total sales by month
+SELECT SUM(product_price * product_quantity) AS total_sales, EXTRACT(MONTH FROM date_added) AS month
+FROM orders_table
+JOIN dim_products ON orders_table.product_code = dim_products.product_code
+JOIN dim_date_times ON orders_table.date_uuid = dim_date_times.date_uuid
+GROUP BY month
+ORDER BY total_sales DESC
+LIMIT 6;
+
+# Task 4: How Many Sales Are Coming from Online?
+
+-- Query to get the number of sales and product quantity count by location (online vs offline)
+SELECT COUNT(*) AS numbers_of_sales, SUM(product_quantity) AS product_quantity_count, 
+       CASE 
+           WHEN store_type = 'Web portal' THEN 'Web'
+           ELSE 'Offline'
+       END AS location
+FROM orders_table
+JOIN dim_store_details ON orders_table.store_code = dim_store_details.store_code
+GROUP BY location;
+
+#Task 5: What Percentage of Sales Come Through Each Type of Store?
+
+-- Query to get total and percentage of sales by store type
+WITH total_sales_by_store AS (
+    SELECT store_type, SUM(product_price * product_quantity) AS total_sales
+    FROM orders_table
+    JOIN dim_products ON orders_table.product_code = dim_products.product_code
+    JOIN dim_store_details ON orders_table.store_code = dim_store_details.store_code
+    GROUP BY store_type
+),
+total_sales AS (
+    SELECT SUM(total_sales) AS total_sales
+    FROM total_sales_by_store
+)
+SELECT store_type, total_sales, 
+       (total_sales / (SELECT total_sales FROM total_sales) * 100) AS percentage_total
+FROM total_sales_by_store
+ORDER BY total_sales DESC;
+
+# Task 6: Which Month in Each Year Produced the Highest Cost of Sales?
+
+-- Query to get the highest sales for each month in each year
+SELECT SUM(product_price * product_quantity) AS total_sales, 
+       EXTRACT(YEAR FROM date_added) AS year, 
+       EXTRACT(MONTH FROM date_added) AS month
+FROM orders_table
+JOIN dim_products ON orders_table.product_code = dim_products.product_code
+JOIN dim_date_times ON orders_table.date_uuid = dim_date_times.date_uuid
+GROUP BY year, month
+ORDER BY total_sales DESC
+LIMIT 10;
+
+# Task 7: What Is Our Staff Headcount?
+
+-- Query to get total staff numbers by country
+SELECT SUM(staff_numbers) AS total_staff_numbers, country_code
+FROM dim_store_details
+GROUP BY country_code
+ORDER BY total_staff_numbers DESC;
+
+# Task 8: Which German Store Type Is Selling the Most?
+
+-- Query to get total sales by store type in Germany
+SELECT SUM(product_price * product_quantity) AS total_sales, store_type, country_code
+FROM orders_table
+JOIN dim_products ON orders_table.product_code = dim_products.product_code
+JOIN dim_store_details ON orders_table.store_code = dim_store_details.store_code
+WHERE country_code = 'DE'
+GROUP BY store_type, country_code
+ORDER BY total_sales DESC;
+
+# Task 9: How Quickly Is the Company Making Sales?
+
+-- Query to get the average time between sales
+SELECT EXTRACT(YEAR FROM date_added) AS year, 
+       AVG(LEAD(date_added) OVER (ORDER BY date_added) - date_added) AS actual_time_taken
+FROM orders_table
+JOIN dim_date_times ON orders_table.date_uuid = dim_date_times.date_uuid
+GROUP BY year
+ORDER BY year;
+
+# Task 10: Update the Latest Code Changes to GitHub
+
+1. Save SQL Statements to a .sql File:
+
+Create a file named queries.sql and add all the above SQL queries to it.
+-- queries.sql
+
+-- Task 1: How Many Stores Does the Business Have and in Which Countries?
+
+SELECT country_code AS country, COUNT(*) AS total_no_stores
+FROM dim_store_details
+GROUP BY country_code
+ORDER BY total_no_stores DESC;
+
+-- Task 2: Which Locations Currently Have the Most Stores?
+
+SELECT locality, COUNT(*) AS total_no_stores
+FROM dim_store_details
+GROUP BY locality
+ORDER BY total_no_stores DESC
+LIMIT 10;
+
+-- Task 3: Which Months Produced the Largest Amount of Sales?
+
+SELECT SUM(product_price * product_quantity) AS total_sales, EXTRACT(MONTH FROM date_added) AS month
+FROM orders_table
+JOIN dim_products ON orders_table.product_code = dim_products.product_code
+JOIN dim_date_times ON orders_table.date_uuid = dim_date_times.date_uuid
+GROUP BY month
+ORDER BY total_sales DESC
+LIMIT 6;
+
+-- Task 4: How Many Sales Are Coming from Online?
+
+SELECT COUNT(*) AS numbers_of_sales, SUM(product_quantity) AS product_quantity_count, 
+       CASE 
+           WHEN store_type = 'Web portal' THEN 'Web'
+           ELSE 'Offline'
+       END AS location
+FROM orders_table
+JOIN dim_store_details ON orders_table.store_code = dim_store_details.store_code
+GROUP BY location;
+
+-- Task 5: What Percentage of Sales Come Through Each Type of Store?
+
+WITH total_sales_by_store AS (
+    SELECT store_type, SUM(product_price * product_quantity) AS total_sales
+    FROM orders_table
+    JOIN dim_products ON orders_table.product_code = dim_products.product_code
+    JOIN dim_store_details ON orders_table.store_code = dim_store_details.store_code
+    GROUP BY store_type
+),
+total_sales AS (
+    SELECT SUM(total_sales) AS total_sales
+    FROM total_sales_by_store
+)
+SELECT store_type, total_sales, 
+       (total_sales / (SELECT total_sales FROM total_sales) * 100) AS percentage_total
+FROM total_sales_by_store
+ORDER BY total_sales DESC;
+
+-- Task 6: Which Month in Each Year Produced the Highest Cost of Sales?
+
+SELECT SUM(product_price * product_quantity) AS total_sales, 
+       EXTRACT(YEAR FROM date_added) AS year, 
+       EXTRACT(MONTH FROM date_added) AS month
+FROM orders_table
+JOIN dim_products ON orders_table.product_code = dim_products.product_code
+JOIN dim_date_times ON orders_table.date_uuid = dim_date_times.date_uuid
+GROUP BY year, month
+ORDER BY total_sales DESC
+LIMIT 10;
+
+-- Task 7: What Is Our Staff Headcount?
+
+SELECT SUM(staff_numbers) AS total_staff_numbers, country_code
+FROM dim_store_details
+GROUP BY country_code
+ORDER BY total_staff_numbers DESC;
+
+-- Task 8: Which German Store Type Is Selling the Most?
+
+SELECT SUM(product_price * product_quantity) AS total_sales, store_type, country_code
+FROM orders_table
+JOIN dim_products ON orders_table.product_code = dim_products.product_code
+JOIN dim_store_details ON orders_table.store_code = dim_store_details.store_code
+WHERE country_code = 'DE'
+GROUP BY store_type, country_code
+ORDER BY total_sales DESC;
+
+-- Task 9: How Quickly Is the Company Making Sales?
+
+SELECT EXTRACT(YEAR FROM date_added) AS year, 
+       AVG(LEAD(date_added) OVER (ORDER BY date_added) - date_added) AS actual_time_taken
+FROM orders_table
+JOIN dim_date_times ON orders_table.date_uuid = dim_date_times.date_uuid
+GROUP BY year
+ORDER BY year;
+
+# Querying Data
+The following SQL queries can be used to extract meaningful insights from the centralized sales database:
+
+1. How many stores does the business have and in which countries?
+
+SELECT country_code AS country, COUNT(*) AS total_no_stores
+FROM dim_store_details
+GROUP BY country_code
+ORDER BY total_no_stores DESC;
+
+2. Which locations currently have the most stores?
+
+SELECT locality, COUNT(*) AS total_no_stores
+FROM dim_store_details
+GROUP BY locality
+ORDER BY total_no_stores DESC
+LIMIT 10;
+
+3. Which months produced the largest amount of sales?
+
+SELECT SUM(product_price * product_quantity) AS total_sales, EXTRACT(MONTH FROM date_added) AS month
+FROM orders_table
+JOIN dim_products ON orders_table.product_code = dim_products.product_code
+JOIN dim_date_times ON orders_table.date_uuid = dim_date_times.date_uuid
+GROUP BY month
+ORDER BY total_sales DESC
+LIMIT 6;
+
+4. How many sales are coming from online?
+
+SELECT COUNT(*) AS numbers_of_sales, SUM(product_quantity) AS product_quantity_count, 
+       CASE 
+           WHEN store_type = 'Web portal' THEN 'Web'
+           ELSE 'Offline'
+       END AS location
+FROM orders_table
+JOIN dim_store_details ON orders_table.store_code = dim_store_details.store_code
+GROUP BY location;
+
+5. What percentage of sales come through each type of store?
+
+WITH total_sales_by_store AS (
+    SELECT store_type, SUM(product_price * product_quantity) AS total_sales
+    FROM orders_table
+    JOIN dim_products ON orders_table.product_code = dim_products.product_code
+    JOIN dim_store_details ON orders_table.store_code = dim_store_details.store_code
+    GROUP BY store_type
+),
+total_sales AS (
+    SELECT SUM(total_sales) AS total_sales
+    FROM total_sales_by_store
+)
+SELECT store_type, total_sales, 
+       (total_sales / (SELECT total_sales FROM total_sales) * 100) AS percentage_total
+FROM total_sales_by_store
+ORDER BY total_sales DESC;
+
+6. Which month in each year produced the highest cost of sales?
+
+SELECT SUM(product_price * product_quantity) AS total_sales, 
+       EXTRACT(YEAR FROM date_added) AS year, 
+       EXTRACT(MONTH FROM date_added) AS month
+FROM orders_table
+JOIN dim_products ON orders_table.product_code = dim_products.product_code
+JOIN dim_date_times ON orders_table.date_uuid = dim_date_times.date_uuid
+GROUP BY year, month
+ORDER BY total_sales DESC
+LIMIT 10;
+
+7. What is our staff headcount?
+
+SELECT SUM(staff_numbers) AS total_staff_numbers, country_code
+FROM dim_store_details
+GROUP BY country_code
+ORDER BY total_staff_numbers DESC;
+
+8. Which German store type is selling the most?
+
+SELECT SUM(product_price * product_quantity) AS total_sales, store_type, country_code
+FROM orders_table
+JOIN dim_products ON orders_table.product_code = dim_products.product_code
+JOIN dim_store_details ON orders_table.store_code = dim_store_details.store_code
+WHERE country_code = 'DE'
+GROUP BY store_type, country_code
+ORDER BY total_sales DESC;
+
+9. How quickly is the company making sales?
+
+SELECT EXTRACT(YEAR FROM date_added) AS year, 
+       AVG(LEAD(date_added) OVER (ORDER BY date_added) - date_added) AS actual_time_taken
+FROM orders_table
+JOIN dim_date_times ON orders_table.date_uuid = dim_date_times.date_uuid
+GROUP BY year
+ORDER BY year;
+
+.
+├── data_cleaning.py       # Contains DataCleaning class
+├── data_extraction.py     # Contains DataExtractor class
+├── database_utils.py      # Contains DatabaseConnector class
+├── db_creds.yaml          # Database credentials (not tracked by Git)
+├── requirements.txt       # Python dependencies
+├── README.md              # Project README file
+├── .gitignore             # Git ignore file
+└── queries.sql            # SQL queries for extracting business metrics
