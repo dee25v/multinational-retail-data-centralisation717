@@ -1,0 +1,205 @@
+#Task 1: Set Up a New Database
+- Initialize a new PostgreSQL database named sales_data using pgAdmin4.
+
+#Task 2: Initialize the Three Project Classes
+
+1. Create data_extraction.py and Define DataExtractor Class:
+# data_extraction.py
+
+class DataExtractor:
+    def __init__(self):
+        pass
+
+    # Methods to extract data from different sources will be added later
+
+2. Create database_utils.py and Define DatabaseConnector Class:
+# database_utils.py
+
+class DatabaseConnector:
+    def __init__(self):
+        pass
+
+    # Methods to connect and interact with the database will be added later
+
+3. Create data_cleaning.py and Define DataCleaning Class:
+# data_cleaning.py
+
+class DataCleaning:
+    def __init__(self):
+        pass
+
+    # Methods to clean data from different sources will be added later
+
+# Task 3: Extract and Clean the User Data
+
+1. Create db_creds.yaml File:
+# db_creds.yaml
+
+RDS_HOST: data-handling-project-readonly.cq2e8zno855e.eu-west-1.rds.amazonaws.com
+RDS_PASSWORD: AiCore2022
+RDS_USER: aicore_admin
+RDS_DATABASE: postgres
+RDS_PORT: 5432
+
+Add db_creds.yaml to .gitignore:
+# .gitignore
+
+db_creds.yaml
+
+2. Define Methods in DatabaseConnector Class to Extract Data:
+# database_utils.py
+
+import yaml
+import sqlalchemy
+
+class DatabaseConnector:
+    def __init__(self):
+        pass
+
+    def read_db_creds(self, creds_file='db_creds.yaml'):
+        with open(creds_file, 'r') as file:
+            creds = yaml.safe_load(file)
+        return creds
+
+    def init_db_engine(self, creds):
+        engine = sqlalchemy.create_engine(
+            f"postgresql://{creds['RDS_USER']}:{creds['RDS_PASSWORD']}@{creds['RDS_HOST']}:{creds['RDS_PORT']}/{creds['RDS_DATABASE']}"
+        )
+        return engine
+
+    def list_db_tables(self, engine):
+        with engine.connect() as connection:
+            result = connection.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';")
+            tables = [row[0] for row in result]
+        return tables
+
+    def upload_to_db(self, df, table_name, engine):
+        df.to_sql(table_name, engine, if_exists='replace', index=False)
+
+3. Define Methods in DataExtractor Class to Extract Data:
+# data_extraction.py
+
+import pandas as pd
+
+class DataExtractor:
+    def __init__(self):
+        pass
+
+    def read_rds_table(self, db_connector, table_name):
+        engine = db_connector.init_db_engine(db_connector.read_db_creds())
+        query = f"SELECT * FROM {table_name}"
+        df = pd.read_sql(query, engine)
+        return df
+
+4. Define clean_user_data Method in DataCleaning Class:
+# data_cleaning.py
+
+class DataCleaning:
+    def __init__(self):
+        pass
+
+    def clean_user_data(self, df):
+        # Example cleaning operations
+        df = df.dropna()  # Drop rows with any null values
+        df = df[df['date_of_birth'].apply(lambda x: isinstance(x, str) and len(x) == 10)]  # Ensure date_of_birth is a valid string of length 10
+        # Add other cleaning steps as required
+        return df
+
+5. Upload Cleaned Data to Database:
+# main.py
+
+from data_extraction import DataExtractor
+from database_utils import DatabaseConnector
+from data_cleaning import DataCleaning
+
+# Initialize classes
+extractor = DataExtractor()
+connector = DatabaseConnector()
+cleaner = DataCleaning()
+
+# Read database credentials
+db_creds = connector.read_db_creds()
+
+# Initialize database engine
+engine = connector.init_db_engine(db_creds)
+
+# Extract data from RDS
+user_data_df = extractor.read_rds_table(connector, 'user_data')
+
+# Clean user data
+cleaned_user_data = cleaner.clean_user_data(user_data_df)
+
+# Upload cleaned data to database
+connector.upload_to_db(cleaned_user_data, 'dim_users', engine)
+
+# Task 4: Extracting Users and Cleaning Card Details
+1. Install tabula-py Package:
+
+pip install tabula-py
+
+2. Define retrieve_pdf_data Method in DataExtractor Class:
+
+# data_extraction.py
+
+import tabula
+
+class DataExtractor:
+    def __init__(self):
+        pass
+
+    def read_rds_table(self, db_connector, table_name):
+        engine = db_connector.init_db_engine(db_connector.read_db_creds())
+        query = f"SELECT * FROM {table_name}"
+        df = pd.read_sql(query, engine)
+        return df
+
+    def retrieve_pdf_data(self, link):
+        dfs = tabula.read_pdf(link, pages='all')
+        df = pd.concat(dfs, ignore_index=True)
+        return df
+
+3. Define clean_card_data Method in DataCleaning Class:
+# data_cleaning.py
+
+class DataCleaning:
+    def __init__(self):
+        pass
+
+    def clean_user_data(self, df):
+        df = df.dropna()
+        df = df[df['date_of_birth'].apply(lambda x: isinstance(x, str) and len(x) == 10)]
+        return df
+
+    def clean_card_data(self, df):
+        df = df.dropna()
+        # Add other cleaning steps as required
+        return df
+
+4. Upload Cleaned Card Data to Database:
+
+# main.py
+
+from data_extraction import DataExtractor
+from database_utils import DatabaseConnector
+from data_cleaning import DataCleaning
+
+# Initialize classes
+extractor = DataExtractor()
+connector = DatabaseConnector()
+cleaner = DataCleaning()
+
+# Read database credentials
+db_creds = connector.read_db_creds()
+
+# Initialize database engine
+engine = connector.init_db_engine(db_creds)
+
+# Extract and clean user data
+user_data_df = extractor.read_rds_table(connector, 'user_data')
+cleaned_user_data = cleaner.clean_user_data(user_data_df)
+connector.upload_to_db(cleaned_user_data, 'dim_users', engine)
+
+# Extract and clean card data
+card_data_df = extractor.retrieve_pdf_data('https://link_to_pdf')
+cleaned_card_data = cleaner.clean_card_data(card_data_df)
+connector.upload_to_db(cleaned_card_data, 'dim_card_details', engine)
